@@ -4,9 +4,23 @@ const fs = require('fs')
 
 const BASE_URL = 'http://localhost:5173'
 const SCREENSHOT_DIR = path.join(__dirname, 'screenshots')
+const FIXTURE_DIR = path.join(__dirname, 'fixtures')
 
 if (!fs.existsSync(SCREENSHOT_DIR)) {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true })
+}
+if (!fs.existsSync(FIXTURE_DIR)) {
+  fs.mkdirSync(FIXTURE_DIR, { recursive: true })
+}
+
+// 负向用例辅助文件
+const OVERSIZE_FILE = path.join(FIXTURE_DIR, 'oversize_12mb.jpg')
+const NON_IMAGE_FILE = path.join(FIXTURE_DIR, 'not_an_image.txt')
+if (!fs.existsSync(OVERSIZE_FILE)) {
+  fs.writeFileSync(OVERSIZE_FILE, Buffer.alloc(12 * 1024 * 1024, 0xff))
+}
+if (!fs.existsSync(NON_IMAGE_FILE)) {
+  fs.writeFileSync(NON_IMAGE_FILE, 'this is not an image')
 }
 
 function sleep(ms) {
@@ -143,10 +157,57 @@ async function dumpPage(page, label) {
   await dumpPage(page, 'training')
   await screenshot(page, '11_training')
 
+  // 12. 负向用例：未登录访问 /detect 应重定向到登录页（使用全新 browser context）
+  const anonContext = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  const anonPage = await anonContext.newPage()
+  await anonPage.goto(`${BASE_URL}/detect`)
+  await sleep(1000)
+  if (!anonPage.url().includes('/login')) {
+    throw new Error('未登录访问 /detect 未重定向到 /login: ' + anonPage.url())
+  }
+  await screenshot(anonPage, '12_detect_anon_redirect')
+  await anonPage.close()
+  await anonContext.close()
+
+  // 13. 负向用例：上传超过 10MB 的图片，前端应拦截
+  await page.goto(`${BASE_URL}/detect`)
+  await waitFor(page, '上传茶叶图片')
+  let alertMsg = ''
+  page.once('dialog', async dialog => {
+    alertMsg = dialog.message()
+    await dialog.accept()
+  })
+  const [oversizeChooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.click('.el-upload__text em'),
+  ])
+  await oversizeChooser.setFiles(OVERSIZE_FILE)
+  await sleep(500)
+  if (!alertMsg.includes('10MB')) {
+    throw new Error('超大文件未触发 10MB 限制提示，实际提示：' + alertMsg)
+  }
+  await screenshot(page, '13_oversize_rejected')
+
+  // 14. 负向用例：上传非图片文件，应被判为最低等级（等外 / 置信度 0%）
+  await page.goto(`${BASE_URL}/detect`)
+  await waitFor(page, '上传茶叶图片')
+  const [badChooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.click('.el-upload__text em'),
+  ])
+  await badChooser.setFiles(NON_IMAGE_FILE)
+  await sleep(4000)
+  const bodyAfterBad = await page.evaluate(() => document.body.innerText)
+  if (!bodyAfterBad.includes('检测结果') || !(bodyAfterBad.includes('等外') || bodyAfterBad.includes('0%'))) {
+    console.log('非图片文件检测结果 body:', bodyAfterBad.slice(0, 500))
+    throw new Error('非图片文件未被判为等外或置信度 0%')
+  }
+  await screenshot(page, '14_nonimage_rejected')
+
   console.log('--- browser logs ---')
   logs.forEach(l => console.log(l))
   await browser.close()
-  console.log('E2E 基础巡检通过，截图保存到:', SCREENSHOT_DIR)
+  console.log('E2E 全量巡检通过，截图保存到:', SCREENSHOT_DIR)
 })().catch(e => {
   console.error('E2E 巡检失败:', e)
   process.exit(1)
