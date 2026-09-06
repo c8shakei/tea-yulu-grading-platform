@@ -25,8 +25,8 @@ watch(() => props.pageData.json, (val) => {
 
 const tableData = computed(() => props.pageData.list || [])
 
-function handleUpload({ file }) {
-  emit('upload', file.raw)
+function handleUpload(uploadFile) {
+  emit('upload', uploadFile?.raw)
 }
 
 function searchTrace() {

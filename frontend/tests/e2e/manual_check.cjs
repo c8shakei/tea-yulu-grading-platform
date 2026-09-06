@@ -34,6 +34,12 @@ async function dumpPage(page, label) {
 (async () => {
   const browser = await chromium.launch({ headless: true })
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  const logs = []
+  context.on('page', page => {
+    page.on('console', msg => logs.push(`[console] ${msg.type()}: ${msg.text()}`))
+    page.on('pageerror', err => logs.push(`[pageerror] ${err.message}`))
+    page.on('requestfailed', req => logs.push(`[requestfailed] ${req.url()} ${req.failure()?.errorText}`))
+  })
 
   // 1. 未登录访问首页
   const page1 = await context.newPage()
@@ -87,8 +93,11 @@ async function dumpPage(page, label) {
   await page.goto(`${BASE_URL}/detect`)
   await waitFor(page, '上传茶叶图片')
   const testImage = path.join(__dirname, 'test_tea.jpg')
-  const inputFile = await page.$('input[type="file"]')
-  await inputFile.setInputFiles(testImage)
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.click('.el-upload__text em'),
+  ])
+  await fileChooser.setFiles(testImage)
   await sleep(3000)
   await waitFor(page, '检测结果')
   const detectBody = await page.evaluate(() => document.body.innerText)
@@ -134,6 +143,8 @@ async function dumpPage(page, label) {
   await dumpPage(page, 'training')
   await screenshot(page, '11_training')
 
+  console.log('--- browser logs ---')
+  logs.forEach(l => console.log(l))
   await browser.close()
   console.log('E2E 基础巡检通过，截图保存到:', SCREENSHOT_DIR)
 })().catch(e => {
