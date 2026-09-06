@@ -21,6 +21,8 @@ frontend/node_modules/
 frontend/dist/
 frontend/.playwright-cli/
 frontend/tests/e2e/screenshots/
+frontend/tests/e2e/test_tea.jpg
+frontend/tests/e2e/fixtures/
 
 # 后端
 data/
@@ -29,6 +31,24 @@ backend/__pycache__/
 backend/*.db
 backend/*.sqlite3
 src/**/__pycache__/
+
+# 训练输出与模型权重
+models/*.png
+models/*.jpg
+models/*.jpeg
+*.pt
+*.pth
+*.onnx
+runs/
+*.cache
+
+# 过程性文档（二进制、不入仓）
+*.docx
+*.xlsx
+*.pdf
+
+# WorkBuddy 本地工作记忆（不入仓）
+.workbuddy/
 
 # IDE
 .vscode/
