@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.log
+
+# 数据集（体积大，不提交 Git）
+datasets/
+*.zip
+*.pt
+*.onnx
+
+# 模型训练输出
+runs/
+*.cache
+
+# 前端
+node_modules/
+dist/
+frontend/node_modules/
+frontend/dist/
+frontend/.playwright-cli/
+frontend/tests/e2e/screenshots/
+
+# 后端
+data/
+uploads/
+backend/__pycache__/
+backend/*.db
+backend/*.sqlite3
+src/**/__pycache__/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

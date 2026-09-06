@@ -1,0 +1,12 @@
+# 契约①：YOLO 检测数据配置（项目根相对路径）
+# 由 W1 生成；datasets/tea_yulu 为 junction，实际存储 D:\BISHE_DATA\datasets\tea_yulu
+path: datasets/tea_yulu
+train: train/images
+val: val/images
+test: test/images
+nc: 4
+names:
+  - 特级
+  - 一级
+  - 二级
+  - 等外
