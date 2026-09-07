@@ -136,6 +136,12 @@ npm run test:e2e
 - 历史记录、个人中心、训练曲线看板页面渲染
 - 负向用例：超大文件、非图片文件、未登录访问受保护路由
 
+> **测试图片来源**：`frontend/tests/e2e/test_tea.jpg` 已被 `.gitignore` 排除，不会随仓库下发。在新环境运行 E2E 前，请从本地数据集复制一张真实茶叶图片到该路径，例如：
+> ```bash
+> cp /d/BISHE_DATA/datasets/tea_yulu/test/images/20231224_161209_jpg_rf_488331cf39e61d4d6025a7eedab300f9.jpg \
+>    frontend/tests/e2e/test_tea.jpg
+> ```
+
 ---
 
 ## 生产构建
