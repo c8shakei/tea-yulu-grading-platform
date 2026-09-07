@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, onActivated, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import GradePieChart from '../components/charts/GradePieChart.vue'
 import ConfidenceLineChart from '../components/charts/ConfidenceLineChart.vue'
@@ -21,22 +21,27 @@ const pageConfig = computed(() => schema.value.pages?.profile || { title: '个�
 async function loadData() {
   loading.value = true
   try {
-    userInfo.value = await getMe()
+    const me = await getMe()
+    userInfo.value = me
+    userStore.setUser({ ...userStore.user?.value, ...me })
     if (userInfo.value?.user_id) {
       userStats.value = await getUserStats(userInfo.value.user_id)
     }
+  } catch (e) {
+    console.error('加载个人中心数据失败', e)
   } finally {
     loading.value = false
   }
 }
+
+onMounted(loadData)
+onActivated(loadData)
 
 function logout() {
   removeToken()
   userStore.logoutUser()
   router.push('/login')
 }
-
-onMounted(loadData)
 </script>
 
 <template>

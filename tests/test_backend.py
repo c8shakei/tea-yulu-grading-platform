@@ -44,6 +44,13 @@ def test_health(client):
 
 
 def test_register_login(client):
+    # Weak password rejection
+    r = client.post("/api/auth/register", json={"username": "weak_tester", "password": "1"})
+    assert r.status_code == 400, r.text
+    body = r.json()
+    assert body["code"] == 400
+    print("[OK] /api/auth/register weak password rejected")
+
     # Register
     r = client.post("/api/auth/register", json={"username": "tester", "password": "123456"})
     assert r.status_code == 200, r.text
@@ -181,7 +188,8 @@ def test_stats(client, token: str):
     body = r.json()
     assert body["code"] == 0
     assert "total_detections" in body["data"]
-    print("[OK] /api/stats/user/{user_id}")
+    assert body["data"]["total_detections"] >= 1, "authenticated detection should contribute to user stats"
+    print(f"[OK] /api/stats/user/{user['id']} (total={body['data']['total_detections']})")
 
 
 def main():

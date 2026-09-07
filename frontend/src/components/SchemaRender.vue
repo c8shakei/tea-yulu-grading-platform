@@ -25,6 +25,17 @@ watch(() => props.pageData.json, (val) => {
 
 const tableData = computed(() => props.pageData.list || [])
 
+const COLUMN_LABELS = {
+  created_at: '时间',
+  class_name: '等级',
+  confidence: '置信度',
+  trace_id: '溯源 ID',
+}
+
+function columnLabel(col) {
+  return COLUMN_LABELS[col] || col
+}
+
 function handleUpload(uploadFile) {
   emit('upload', uploadFile?.raw)
 }
@@ -105,14 +116,17 @@ function applyJson() {
 
       <el-card v-else-if="w.type === 'data-table'" shadow="hover" class="widget-card">
         <template #header>{{ w.title || '数据列表' }}</template>
-        <el-table :data="tableData" stripe style="width: 100%">
-          <el-table-column
-            v-for="col in w.columns"
-            :key="col"
-            :prop="col"
-            :label="col"
-          />
-        </el-table>
+        <div class="table-responsive">
+          <el-table :data="tableData" stripe style="min-width: 640px">
+            <el-table-column
+              v-for="col in w.columns"
+              :key="col"
+              :prop="col"
+              :label="columnLabel(col)"
+              show-overflow-tooltip
+            />
+          </el-table>
+        </div>
       </el-card>
 
       <el-card v-else-if="w.type === 'trace-input'" shadow="hover" class="widget-card">
@@ -170,5 +184,9 @@ function applyJson() {
 }
 .widget-card {
   margin-bottom: 16px;
+}
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
 }
 </style>

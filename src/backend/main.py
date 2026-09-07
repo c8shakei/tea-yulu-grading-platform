@@ -2,7 +2,7 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
@@ -45,6 +45,15 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(detections.router, prefix="/api")
 app.include_router(traceability.router, prefix="/api")
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Return unified {code, message, data} for HTTPException."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.status_code, "message": exc.detail, "data": None},
+    )
 
 
 @app.exception_handler(Exception)

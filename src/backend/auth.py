@@ -116,6 +116,8 @@ async def register(body: UserRegister):
     """Register a new user."""
     if not body.username or not body.password:
         raise HTTPException(status_code=400, detail="username and password are required")
+    if len(body.password) < 6:
+        raise HTTPException(status_code=400, detail="password must be at least 6 characters")
     existing = db.get_user_by_username(body.username)
     if existing:
         raise HTTPException(status_code=409, detail="username already exists")
