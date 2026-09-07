@@ -114,8 +114,8 @@ def test_trace_and_verify(client, trace_id: str, token: str):
     assert body["code"] == 0
     print("[OK] /api/trace")
 
-    # Verify chain.
-    r = client.get(f"/api/trace/{trace_id}")
+    # Verify chain (must be authenticated and owner).
+    r = client.get(f"/api/trace/{trace_id}", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["code"] == 0
@@ -130,6 +130,19 @@ def test_trace_and_verify(client, trace_id: str, token: str):
 
     assert verify_block_dicts(chain) is False
     print("[OK] hashchain tamper detection")
+
+
+def test_trace_isolation(client, trace_id: str):
+    # Create user B and attempt to read user A's trace.
+    r = client.post("/api/auth/register", json={"username": "tester_b", "password": "123456"})
+    assert r.status_code == 200, r.text
+    r = client.post("/api/auth/login", data={"username": "tester_b", "password": "123456"})
+    assert r.status_code == 200, r.text
+    token_b = r.json()["data"]["token"]
+
+    r = client.get(f"/api/trace/{trace_id}", headers={"Authorization": f"Bearer {token_b}"})
+    assert r.status_code == 403, f"expected 403, got {r.status_code}: {r.text}"
+    print("[OK] /api/trace/{id} cross-user isolation")
 
 
 def test_detections(client, token: str):
@@ -180,6 +193,7 @@ def main():
         anon_trace = test_detect_anonymous(client)
         auth_trace = test_detect_authenticated(client, token)
         test_trace_and_verify(client, auth_trace, token)
+        test_trace_isolation(client, auth_trace)
         test_detections(client, token)
         test_ui_schema(client)
         test_stats(client, token)

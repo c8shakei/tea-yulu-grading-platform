@@ -80,12 +80,28 @@ async def trace_endpoint(
 
 
 @router.get("/trace/{trace_id}")
-async def get_trace(trace_id: str = Path(..., description="Trace id (detection id)")):
+async def get_trace(
+    trace_id: str = Path(..., description="Trace id (detection id)"),
+    current_user: Dict[str, Any] = Depends(require_user),
+):
     """
     Get the hash chain for a trace_id and verify its integrity.
 
+    Only the owner of the detection, an admin, or any authenticated user for
+    anonymous (user_id is None) traces may read the chain.
     Returns chain blocks and a tamper flag.
     """
+    detection = db.get_detection(trace_id)
+    if detection is None:
+        raise HTTPException(status_code=404, detail=f"trace_id {trace_id} not found")
+
+    owner_id = detection.get("user_id")
+    if owner_id is not None and owner_id != current_user["id"] and current_user["role"] != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the owner or an admin can view this trace",
+        )
+
     blocks = db.get_blocks_by_trace_id(trace_id)
     if not blocks:
         raise HTTPException(status_code=404, detail=f"trace_id {trace_id} not found")

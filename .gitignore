@@ -24,6 +24,9 @@ frontend/tests/e2e/screenshots/
 frontend/tests/e2e/test_tea.jpg
 frontend/tests/e2e/fixtures/
 
+# 测试过程产物
+tests/e2e_artifacts/
+
 # 后端
 data/
 uploads/
